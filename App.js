@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { FlatList, View, Image, TouchableOpacity, Text, Linking, ImageBackground, Modal } from 'react-native'
+import { FlatList, View, Image, TouchableOpacity, Text, Linking, ImageBackground, Modal, ToastAndroid } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
 import { AppLoading } from 'expo'
@@ -95,7 +95,14 @@ export default function App() {
     'Syne-Mono': require('./assets/SyneMono-Regular.ttf'),
   });
 
+  function showToast(selected) {
+    if (selected) {
+      ToastAndroid.show('Añadido correctamente', ToastAndroid.SHORT);
+    } else {
+      ToastAndroid.show('Eliminado correctamente', ToastAndroid.SHORT);
 
+    }
+  }
 
 
   // if(!loaded || !fontLoaded){
@@ -270,10 +277,17 @@ export default function App() {
                 <TouchableOpacity onPress={() => {
                   if (!selectedMovies.some(movie => movie.originalTitle === item.originalTitle)) {
                     setSelectedMovies([...selectedMovies, item])
+                    showToast(true)
+                  } else {
+                    setSelectedMovies(selectedMovies.filter(movie => movie.originalTitle !== item.originalTitle));
+                    showToast(false)
                   }
-                  
-                }}  style={{ marginTop: 10 }}>
-                <AntDesign name="pluscircle" size={24} color="#D94213" />
+                }} style={{ marginTop: 10 }}>
+
+                  {selectedMovies.some(movie => movie.originalTitle === item.originalTitle) ? (
+                    <AntDesign name="checkcircle" size={24} color="#D94213" />
+                  ) : (
+                    <AntDesign name="pluscircle" size={24} color="#D94213" />)}
                 </TouchableOpacity>
               </Poster>
             </PosterContainer>
