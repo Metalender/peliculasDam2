@@ -1,36 +1,39 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, TextInput } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const CommentList = () => {
   const { id } = useLocalSearchParams();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]);
   const [expandedComments, setExpandedComments] = useState({});
   const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
-      const url = `https://api.themoviedb.org/3/movie/${id}/reviews?language=en-US&page=1`;
-      const options = {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-          Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWZmZjQ3YzVkMmE3ZTBkMjg1Mzg5NmZkOTA2ZDg5NyIsInN1YiI6IjYyM2VmZmU3NWE5OTE1MDA0ODM3NGI1OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.I8YbLEsEEJUptEN3QKI5hTaMSE_uAayk29jYJviGrD8'
-        }
-      };
-
       try {
-        const response = await fetch(url, options);
-        const data = await response.json();
-        // Inicializar todos los comentarios como no expandidos
-        const initialExpandedComments = {};
-        data.results.forEach(comment => {
-          initialExpandedComments[comment.id] = false;
-        });
-        setExpandedComments(initialExpandedComments);
-        setData(data.results);
+        const cachedComments = await AsyncStorage.getItem(`comments_${id}`);
+        if (cachedComments !== null) {
+          setData(JSON.parse(cachedComments));
+        } else {
+          const url = `https://api.themoviedb.org/3/movie/${id}/reviews?language=en-US&page=1`;
+          const options = {
+            method: 'GET',
+            headers: {
+              accept: 'application/json',
+              Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWZmZjQ3YzVkMmE3ZTBkMjg1Mzg5NmZkOTA2ZDg5NyIsInN1YiI6IjYyM2VmZmU3NWE5OTE1MDA0ODM3NGI1OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.I8YbLEsEEJUptEN3QKI5hTaMSE_uAayk29jYJviGrD8'
+            }
+          };
+  
+          const response = await fetch(url, options);
+          const responseData = await response.json();
+          const comments = responseData.results;
+          setData(comments);
+          await AsyncStorage.setItem(`comments_${id}`, JSON.stringify(comments));
+        }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching comments:', error);
       }
     };
 
@@ -44,23 +47,25 @@ const CommentList = () => {
     }));
   };
 
-  const handleAddComment = () => {
-    // Crear el nuevo comentario
-    const newCommentData = {
-      author: "me",
-      author_details: {
-        name: "",
-        username: "me",
-        avatar_path: "/eZ86AtmtHSNnCeHKztYEEgxaGcN.jpg",
-        rating: 4
-      },
-      content: newComment // El contenido del comentario es el texto del input
-    };
-    // Agregar el nuevo comentario al estado data
-    setData(prevData => [...prevData, newCommentData]);
-    
-    // Limpiar el input después de agregar el comentario
-    setNewComment('');
+  const handleAddComment = async () => {
+    try {
+      const newCommentData = {
+        author: "me",
+        author_details: {
+          name: "",
+          username: "me",
+          avatar_path: "/eZ86AtmtHSNnCeHKztYEEgxaGcN.jpg",
+          rating: 4
+        },
+        content: newComment
+      };
+      const updatedData = [...data, newCommentData];
+      setData(updatedData);
+      await AsyncStorage.setItem(`comments_${id}`, JSON.stringify(updatedData));
+      setNewComment('');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
   };
 
   const renderCommentItem = ({ item }) => (
