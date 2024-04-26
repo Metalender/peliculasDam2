@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { FlatList, View, Image, TouchableOpacity, Text, Linking, ImageBackground, Modal, ToastAndroid } from 'react-native'
+import { FlatList, View, Image, TouchableOpacity, Text, Linking, ImageBackground, Modal, ToastAndroid, Pressable } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
 import { AppLoading } from 'expo'
 import { useFonts } from 'expo-font';
 import styled from 'styled-components/native'
-import Rating from './components/Rating'
-import Genre from './components/Genre'
-import { getMovies } from './api'
-import * as CONSTANTS from './constants/constants'
+import Rating from '../components/Rating'
+import Genre from '../components/Genre'
+import { getMovies } from '../api'
+import * as CONSTANTS from '../constants/constants'
 import { Animated } from 'react-native';
-import trailer from './constants/constants'
+import trailer from '../constants/constants'
 import { AntDesign } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Link, router } from 'expo-router';
+
+
+
 const Container = styled.View`
 flex: 1;
 padding-top:50px;
@@ -37,6 +41,7 @@ height: ${CONSTANTS.ITEM_SIZE * 1.2}px;
  resize-mode: cover;
   border-radius: 10px;
    margin: 0 0 10px 0;
+   
 
 `
 
@@ -92,7 +97,7 @@ export default function App() {
 
   const scrollX = useRef(new Animated.Value(0)).current
   let [fontLoaded] = useFonts({
-    'Syne-Mono': require('./assets/SyneMono-Regular.ttf'),
+    'Syne-Mono': require('../assets/SyneMono-Regular.ttf'),
   });
 
   function showToast(selected) {
@@ -104,17 +109,6 @@ export default function App() {
     }
   }
 
-
-  // if(!loaded || !fontLoaded){
-  //   return <AppLoading/>;
-  // }
-
-
-
-  const Hi = () => {
-    return <Image style={{ flex: 2 }} source={{ uri: 'https://image.tmdb.org/t/p/w500/1Rr5SrvHxMXHu5RjKpaMba8VTzi.jpg' }}></Image>
-
-  }
   return (
 
     <Container>
@@ -244,32 +238,25 @@ export default function App() {
           if (!item.originalTitle) {
             return <DummyContainer />
           }
-          const trailerOrder = (a) => {
-            //console.log(a);
-            if (a == 1) {
-              setTra("https://www.youtube.com/watch?v=JfVOs4VSpmA")
-            } if (a == 2) {
-              setTra("https://www.youtube.com/watch?v=4q6UGCyHZCI")
-
-            } if (a == 3) {
-              setTra("https://www.youtube.com/watch?v=CaimKeDcudo")
-            } if (a == 4) {
-              setTra("https://www.youtube.com/watch?v=9ix7TUGVYIo")
-            } if (a == 5) {
-              setTra("https://www.youtube.com/watch?v=-FmWuCgJmxo")
-            }
-            console.log("entra");
-          }
-
 
           return (
             <PosterContainer>
               <Poster as={Animated.View} style={{ transform: [{ translateY }] }}>
-                <TouchableOpacity onPress={() => { trailerOrder(index); Linking.openURL(tra) }}>
-                  <Text style={{ color: "white" }}>Watch Trailer</Text>
-                  <Text></Text>
+                <TouchableOpacity style={{
+                  width: '100%',
+                  height: CONSTANTS.ITEM_SIZE * 1.2,
+                  borderRadius: 10,
+                  overflow: 'hidden',
+                  marginBottom: 10,
+                }} onPress={() => router.push({
+                  pathname:"/comments",
+                  params:{id:item.key}
+                }
+                )
+                }>
+                  <PosterImage source={{ uri: item.posterPath }} />
                 </TouchableOpacity>
-                <PosterImage source={{ uri: item.posterPath }} />
+
                 <PosterTitle numberOfLines={1}>{item.originalTitle}</PosterTitle>
                 <Rating rating={item.voteAverage} />
                 <Genre genres={item.genres} />
