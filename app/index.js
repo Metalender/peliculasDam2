@@ -86,6 +86,11 @@ export default function App() {
   const [loaded, setLoaded] = useState(false)
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMovies, setSelectedMovies] = useState([]);
+  const [dataTrailer, setDataTrailer] = useState([]);
+  const [link, setLink] = useState(null);
+  const [errorLink, setErrorLink] = useState(null);
+
+
   useEffect(() => {
     const fetchData = async () => {
       const data = await getMovies()
@@ -108,6 +113,41 @@ export default function App() {
 
     }
   }
+ 
+    const playTrailer = async (idTrailer) => {
+      try {
+
+          const url = `https://api.themoviedb.org/3/movie/${idTrailer}/videos?language=en-US`;
+          const options = {
+              method: 'GET',
+              headers: {
+                  accept: 'application/json',
+                  Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMWZmZjQ3YzVkMmE3ZTBkMjg1Mzg5NmZkOTA2ZDg5NyIsInN1YiI6IjYyM2VmZmU3NWE5OTE1MDA0ODM3NGI1OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.I8YbLEsEEJUptEN3QKI5hTaMSE_uAayk29jYJviGrD8'
+              }
+          };
+
+          const response = await fetch(url, options);
+          const responseData = await response.json();
+          const comments = responseData.results;
+          // setDataTrailer(comments)
+          let foundOfficialTrailer = false;
+
+          comments.forEach((item) => {
+            if (item.name === "Official Trailer" && !foundOfficialTrailer) {
+              foundOfficialTrailer = true;
+              Linking.openURL("https://www.youtube.com/watch?v=" + item.key);
+              return; // Salir del bucle forEach
+            }
+          });
+    
+          if (!foundOfficialTrailer) {
+            ToastAndroid.show('Link no disponible', ToastAndroid.SHORT);
+          }
+          // console.log(comments);
+      } catch (error) {
+          console.error('Error fetching comments:', error);
+      }
+  };
 
   return (
 
@@ -118,13 +158,20 @@ export default function App() {
             onPress={() => setModalVisible(true)}
             style={{
               position: 'absolute', // Posiciona el botón de manera absoluta
-              top: 20, // Ajusta la posición desde la parte superior
+              top: 122, // Ajusta la posición desde la parte superior
+              backgroundColor: "#D94213",
+              padding: 10,
+              paddingHorizontal:79,
+              borderRadius:6,
+              textAlign: "center",
+              height: 40,
               zIndex: 1, // Asegura que el botón esté por encima de otros elementos
             }}
           >
-            <Text style={{ color: "white", marginTop: 100, textAlign: 'center' }}>Ver lista de películas</Text>
+            <Text style={{ color: "white", textAlign: 'center',fontWeight:"bold" }}>Ver lista de películas</Text>
           </TouchableOpacity>
         </View>
+
 
 
         {/* Modal */}
@@ -249,8 +296,8 @@ export default function App() {
                   overflow: 'hidden',
                   marginBottom: 10,
                 }} onPress={() => router.push({
-                  pathname:"/comments",
-                  params:{id:item.key}
+                  pathname: "/comments",
+                  params: { id: item.key, img: item.posterPath }
                 }
                 )
                 }>
@@ -261,21 +308,37 @@ export default function App() {
                 <Rating rating={item.voteAverage} />
                 <Genre genres={item.genres} />
                 <PosterDescription numberOfLines={5}>{item.description}</PosterDescription>
-                <TouchableOpacity onPress={() => {
-                  if (!selectedMovies.some(movie => movie.originalTitle === item.originalTitle)) {
-                    setSelectedMovies([...selectedMovies, item])
-                    showToast(true)
-                  } else {
-                    setSelectedMovies(selectedMovies.filter(movie => movie.originalTitle !== item.originalTitle));
-                    showToast(false)
-                  }
-                }} style={{ marginTop: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <TouchableOpacity
+        onPress={() => {
+          if (!selectedMovies.some(movie => movie.originalTitle === item.originalTitle)) {
+            setSelectedMovies([...selectedMovies, item])
+            showToast(true)
+          } else {
+            setSelectedMovies(selectedMovies.filter(movie => movie.originalTitle !== item.originalTitle));
+            showToast(false)
+          }
+        }}
+        style={{ marginRight: 10 }}
+      >
+        {selectedMovies.some(movie => movie.originalTitle === item.originalTitle) ? (
+          <AntDesign name="checkcircle" size={24} color="#D94213" />
+        ) : (
+          <AntDesign name="pluscircle" size={24} color="#D94213" />
+        )}
+      </TouchableOpacity>
 
-                  {selectedMovies.some(movie => movie.originalTitle === item.originalTitle) ? (
-                    <AntDesign name="checkcircle" size={24} color="#D94213" />
-                  ) : (
-                    <AntDesign name="pluscircle" size={24} color="#D94213" />)}
-                </TouchableOpacity>
+      {/* Segundo icono con su propia acción */}
+      <TouchableOpacity
+        onPress={() => {
+          playTrailer(item.key)
+          // Acción para el segundo icono
+          // Por ejemplo, abrir un modal, mostrar un mensaje, etc.
+        }}
+      >
+        <AntDesign name="play" size={24} color="#D94213" />
+      </TouchableOpacity>
+    </View>
               </Poster>
             </PosterContainer>
           )
